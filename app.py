@@ -1,22 +1,27 @@
 from flask import Flask, request, jsonify
-import pandas as pd
 import os
+import pandas as pd
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for cross-origin requests
+
+# Configuration
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'xlsx', 'pdf'}
 
 # Ensure the upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    print("Upload route accessed")  # Add this log
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
 
@@ -30,30 +35,33 @@ def upload_file():
 
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
 
     try:
+        # Save the file to the upload folder
+        file.save(filepath)
+        print(f"File saved at {filepath}")
+
+        # Process the file
         if filename.endswith('.xlsx'):
-            print("Processing Excel file")  # Add this log
             data = process_excel(filepath)
         elif filename.endswith('.pdf'):
-            print("Processing PDF file")  # Add this log
             data = process_pdf(filepath)
         else:
             return jsonify({'error': 'Unsupported file type'}), 400
 
-        print("File processed successfully")  # Add this log
         return jsonify(data), 200
     except Exception as e:
-        print(f"Error: {e}")  # Add this log
+        print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
-        os.remove(filepath)  # Clean up the uploaded file
+        # Ensure file cleanup
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
 
 def process_excel(filepath):
-    # Read Excel file
+    """Process an Excel file and extract data."""
     df = pd.read_excel(filepath)
-    # Example processing: convert to JSON-like structure
     shifts = []
     for index, row in df.iterrows():
         name = row.get('Name', 'Unknown')
@@ -61,17 +69,18 @@ def process_excel(filepath):
         shifts.append({'name': name, 'days': days})
     return shifts
 
+
 def process_pdf(filepath):
-    # Read PDF file
+    """Process a PDF file and extract text."""
     reader = PdfReader(filepath)
     text = ''
     for page in reader.pages:
         text += page.extract_text()
 
-    # Example: Parse text into structured data (implementation varies)
-    # Assume names and shifts are formatted in a consistent pattern
+    # Parse the text into structured data (example logic)
     shifts = [{'name': 'Example', 'days': ['morning', 'off', 'late']}]
     return shifts
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
