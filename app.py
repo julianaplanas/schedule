@@ -16,6 +16,7 @@ def allowed_file(filename):
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    print("Upload route accessed")  # Add this log
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
 
@@ -33,14 +34,18 @@ def upload_file():
 
     try:
         if filename.endswith('.xlsx'):
+            print("Processing Excel file")  # Add this log
             data = process_excel(filepath)
         elif filename.endswith('.pdf'):
+            print("Processing PDF file")  # Add this log
             data = process_pdf(filepath)
         else:
             return jsonify({'error': 'Unsupported file type'}), 400
 
+        print("File processed successfully")  # Add this log
         return jsonify(data), 200
     except Exception as e:
+        print(f"Error: {e}")  # Add this log
         return jsonify({'error': str(e)}), 500
     finally:
         os.remove(filepath)  # Clean up the uploaded file
