@@ -22,26 +22,11 @@ def allowed_file(filename):
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-
-    file = request.files['file']
-
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-
-    if not allowed_file(file.filename):
-        return jsonify({'error': f'Invalid file type. Allowed types: {app.config["ALLOWED_EXTENSIONS"]}'}), 400
-
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
     try:
-        # Save the file to the upload folder
-        file.save(filepath)
-        print(f"File saved at {filepath}")
-
-        # Process the file
+        print("File upload request received")
+        # Existing code...
+        print(f"Processing file: {filename}")
+        
         if filename.endswith('.xlsx'):
             data = process_excel(filepath)
         elif filename.endswith('.pdf'):
@@ -49,15 +34,15 @@ def upload_file():
         else:
             return jsonify({'error': 'Unsupported file type'}), 400
 
+        print("File processed successfully")
         return jsonify(data), 200
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error during file upload: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
-        # Ensure file cleanup
         if os.path.exists(filepath):
             os.remove(filepath)
-
+            print(f"Cleaned up file: {filepath}")
 
 def process_excel(filepath):
     """Process an Excel file and extract data."""
