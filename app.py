@@ -71,18 +71,27 @@ def upload_file():
             print(f"File not found for cleanup: {filepath}")
 
 
+import pandas as pd
+
 def process_excel(filepath):
     """Process an Excel file and extract shift data."""
     try:
         # Load the Excel file
-        df = pd.read_excel(filepath)
+        df = pd.read_excel(filepath, dtype=str)  # Ensure all values are read as strings
         print(f"Excel file loaded successfully with shape {df.shape}", flush=True)
 
-        # Extract data dynamically
+        # Ensure column headers are properly handled
+        df.fillna("", inplace=True)  # Replace NaN with empty strings
+
         shifts = []
         for index, row in df.iterrows():
-            name = row.iloc[0]  # Assuming the first column is the name
-            days = row.iloc[1:].tolist()  # All other columns represent shifts
+            name = str(row.iloc[0]).strip()  # First column is expected to be the name
+            days = [str(value).strip() for value in row.iloc[1:].tolist()]  # Convert all values to strings
+
+            # Skip rows where the name is empty
+            if not name:
+                continue  
+
             shifts.append({'name': name, 'days': days})
 
         print(f"Extracted shifts from Excel: {shifts}", flush=True)
