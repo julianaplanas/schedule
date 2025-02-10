@@ -74,39 +74,49 @@ def upload_file():
 def process_excel(filepath):
     """Process an Excel file and extract shift data."""
     try:
+        # Load the Excel file
         df = pd.read_excel(filepath)
-        print(f"Excel file loaded successfully with shape {df.shape}")
-        
+        print(f"Excel file loaded successfully with shape {df.shape}", flush=True)
+
+        # Extract data dynamically
         shifts = []
         for index, row in df.iterrows():
-            name = row.get('Name', 'Unknown')  # Adjust column name if necessary
-            days = row[1:].tolist()  # Assuming shifts start from the second column
+            name = row.iloc[0]  # Assuming the first column is the name
+            days = row.iloc[1:].tolist()  # All other columns represent shifts
             shifts.append({'name': name, 'days': days})
-        
-        print(f"Extracted shifts: {shifts}")
+
+        print(f"Extracted shifts from Excel: {shifts}", flush=True)
         return shifts
     except Exception as e:
-        print(f"Error while processing Excel file: {e}")
+        print(f"Error while processing Excel file: {e}", flush=True)
         raise
 
 
 def process_pdf(filepath):
-    """Process a PDF file and extract text."""
+    """Process a PDF file and extract shift data."""
     try:
+        # Read the PDF file
         reader = PdfReader(filepath)
-        print("PDF file loaded successfully.")
-        
         text = ''
         for page in reader.pages:
             text += page.extract_text()
-        print(f"Extracted text from PDF: {text[:500]}")  # Print the first 500 characters of text
+        print(f"Extracted text from PDF: {text[:500]}", flush=True)  # Log the first 500 characters
 
-        # Example parsing logic for shifts (customize as needed)
-        shifts = [{'name': 'Example', 'days': ['morning', 'off', 'late']}]
-        print(f"Extracted shifts from PDF: {shifts}")
+        # Parse the text into shifts (example logic)
+        # Assuming the PDF contains lines like: "Name: John, Shifts: morning, off, late"
+        lines = text.splitlines()
+        shifts = []
+        for line in lines:
+            if "Name:" in line and "Shifts:" in line:
+                parts = line.split(", Shifts:")
+                name = parts[0].replace("Name:", "").strip()
+                days = parts[1].strip().split(", ")
+                shifts.append({'name': name, 'days': days})
+
+        print(f"Extracted shifts from PDF: {shifts}", flush=True)
         return shifts
     except Exception as e:
-        print(f"Error while processing PDF file: {e}")
+        print(f"Error while processing PDF file: {e}", flush=True)
         raise
 
 
