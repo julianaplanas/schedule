@@ -22,13 +22,8 @@
         }
         .calendar {
             display: grid;
-            grid-template-columns: 1fr repeat(6, 1fr);
+            grid-template-columns: repeat(7, 1fr); /* 7 days in a week */
             gap: 10px;
-        }
-        .month-label {
-            grid-column: 1 / span 1;
-            font-weight: bold;
-            text-align: center;
         }
         .day {
             border: 1px solid #ccc;
@@ -37,16 +32,16 @@
             border-radius: 5px;
         }
         .day.off {
-            background-color: #ffffff;
+            background-color: #ffffff; /* White for Day Off */
         }
         .day.morning {
-            background-color: lightgreen;
+            background-color: lightgreen; /* Green for Morning Shift */
         }
         .day.night {
-            background-color: #FFFACD;
+            background-color: #FFFACD; /* Yellow for Night Shift */
         }
         .day.cut {
-            background-color: #ADD8E6;
+            background-color: #ADD8E6; /* Blue for Cut/Partido Shift */
         }
         .header {
             font-weight: bold;
@@ -95,35 +90,39 @@
         </div>
         <div class="legend">
             <h3>Legend</h3>
-            <div class="legend-item"><div class="legend-color off"></div>Día libre</div>
-            <div class="legend-item"><div class="legend-color morning"></div>Turno mañana</div>
-            <div class="legend-item"><div class="legend-color night"></div>Turno noche</div>
-            <div class="legend-item"><div class="legend-color cut"></div>Horario partido</div>
+            <div class="legend-item"><div class="legend-color off"></div>Day Off</div>
+            <div class="legend-item"><div class="legend-color morning"></div>Morning Shift</div>
+            <div class="legend-item"><div class="legend-color night"></div>Night Shift</div>
+            <div class="legend-item"><div class="legend-color cut"></div>Partido Shift</div>
         </div>
     </div>
 
     <script>
         const calendar = document.querySelector("#calendar");
         const dropdown = document.querySelector("#nameDropdown");
-        const fileForm = document.querySelector("#fileForm");
 
-        let shifts = [];
+        let shifts = []; // To hold fetched shift data
 
+        // Fetch shifts from the backend on page load
         document.addEventListener("DOMContentLoaded", async () => {
             try {
-                const response = await fetch("https://schedule-jx24.onrender.com/shifts"); // Update with your back-end URL
+                console.log("Fetching shifts..."); // Debugging
+
+                const response = await fetch("https://schedule-jx24.onrender.com/shifts"); // Replace with your back-end URL
+                console.log("Response status:", response.status); // Debugging
+
                 if (!response.ok) {
                     throw new Error(`Failed to fetch shifts: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log("Received preloaded shifts:", data); // Debugging
+                console.log("Fetched data:", data); // Debugging
 
-                // Validate and update shifts
                 if (!Array.isArray(data) || data.length === 0) {
                     throw new Error("No valid shift data received.");
                 }
-                shifts = data;
+
+                shifts = data; // Assign received data to global variable
                 populateDropdown();
             } catch (error) {
                 console.error("Error loading preloaded shifts:", error);
@@ -131,10 +130,13 @@
             }
         });
 
-
+        // Populate the dropdown with names
         function populateDropdown() {
+            console.log("Populating dropdown..."); // Debugging
             dropdown.innerHTML = '<option value="">Select a name...</option>';
             shifts.forEach(shift => {
+                console.log("Adding name to dropdown:", shift.name); // Debugging
+
                 const option = document.createElement("option");
                 option.value = shift.name;
                 option.textContent = shift.name;
@@ -142,11 +144,12 @@
             });
         }
 
+        // Populate the calendar based on selected name
         function populateCalendar(days) {
             console.log("Populating calendar with shifts:", days); // Debugging
             calendar.innerHTML = ""; // Clear existing calendar
 
-            // Add headers
+            // Add headers for days of the week
             const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
             daysOfWeek.forEach(day => {
                 const headerDiv = document.createElement("div");
@@ -156,12 +159,11 @@
             });
 
             // Populate calendar with shifts
-            let currentDate = 1;
             for (let i = 0; i < 35; i++) { // Assuming a 5-week month layout
                 const dayDiv = document.createElement("div");
                 if (i < days.length) {
                     dayDiv.className = `day ${getShiftClass(days[i])}`;
-                    dayDiv.textContent = days[i];  // Show shift code
+                    dayDiv.textContent = days[i] || "";  // Show shift code or blank
                 } else {
                     dayDiv.className = "day off";
                     dayDiv.textContent = "";
@@ -170,20 +172,21 @@
             }
         }
 
-        // Function to assign shift colors
+        // Map shift codes to classes for color coding
         function getShiftClass(shift) {
             if (["RM", "M1", "M2", "M3", "M5"].includes(shift)) return "morning";
             if (["S", "P2", "P3", "P4", "P5"].includes(shift)) return "cut";
             if (["RT", "T1", "T2", "T3", "T5"].includes(shift)) return "night";
-            return "off";
+            return "off"; // Default to "off"
         }
 
+        // Handle dropdown change
         dropdown.addEventListener("change", (e) => {
             const selectedName = e.target.value;
-            console.log("Selected name:", selectedName);  // Debugging
+            console.log("Selected name:", selectedName); // Debugging
 
             const filteredData = shifts.find(shift => shift.name === selectedName);
-            console.log("Filtered shift data:", filteredData);  // Debugging
+            console.log("Filtered shift data:", filteredData); // Debugging
 
             if (filteredData) {
                 populateCalendar(filteredData.days);
