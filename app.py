@@ -6,12 +6,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for cross-origin requests
 
 # Global variable to store shifts
-#shifts = []
-shifts = [
-    {"name": "Angie", "days": ["RM", "RT", "RT", "1", "1", "RT", "RT"]},
-    {"name": "Shandra", "days": ["RT", "1", "1", "RM", "RM", "RT", "RT"]}
-]
-
+shifts = []
 
 def process_excel(filepath):
     """Process an Excel file, clean it, and extract shift data."""
