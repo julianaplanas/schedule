@@ -106,29 +106,31 @@
         // Fetch shifts from the backend on page load
         document.addEventListener("DOMContentLoaded", async () => {
             try {
-                console.log("Fetching shifts..."); // Debugging
-
-                const response = await fetch("https://schedule-jx24.onrender.com/shifts"); // Replace with your back-end URL
-                console.log("Response status:", response.status); // Debugging
-
+                console.log("Fetching shifts...");
+                const response = await fetch("https://schedule-jx24.onrender.com/shifts"); // Your back-end URL
                 if (!response.ok) {
                     throw new Error(`Failed to fetch shifts: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log("Fetched data:", data); // Debugging
+                console.log("Received data:", data);
 
-                if (!Array.isArray(data) || data.length === 0) {
+                // Update the month title
+                const monthTitle = document.querySelector("#monthTitle");
+                monthTitle.textContent = `Month: ${data.month}`;
+
+                // Validate and populate shifts
+                if (!Array.isArray(data.shifts) || data.shifts.length === 0) {
                     throw new Error("No valid shift data received.");
                 }
-
-                shifts = data; // Assign received data to global variable
+                shifts = data.shifts;
                 populateDropdown();
             } catch (error) {
                 console.error("Error loading preloaded shifts:", error);
                 alert("Failed to load schedule data. Please try again later.");
             }
         });
+
 
         // Populate the dropdown with names
         function populateDropdown() {
