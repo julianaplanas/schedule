@@ -43,21 +43,15 @@ def process_excel(filepath):
         print(f"Error processing Excel: {e}")
         return []
 
-# Preload the Excel file at server startup
-@app.before_first_request
-def preload_excel():
-    global shifts
-    filepath = "uploads/schedule.xlsx"  # Replace with the actual file path
-    shifts = process_excel(filepath)
-    print("Shifts preloaded:", shifts[:5])  # Debug log: First 5 entries
+# Preload the Excel file during initialization
+file_path = "uploads/schedule-febrero.xlsx"  # Path to the preloaded Excel file
+shifts = process_excel(file_path)
+print(f"Shifts preloaded: {shifts[:5]}")  # Log first 5 entries for debugging
 
 @app.route("/shifts", methods=["GET"])
 def get_shifts():
     """Return the preloaded shift data."""
     return jsonify(shifts)
-
-filepath = "./uploads/schedule-febrero.xlsx"  # Path to your uploaded Excel file
-shifts = process_excel(filepath)   # Process the Excel file during app startup
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
