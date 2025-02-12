@@ -29,15 +29,6 @@ def process_excel(filepath):
         df = df.iloc[start_row:].reset_index(drop=True)
         df.columns = ["Name"] + [f"Day {i}" for i in range(1, df.shape[1])]
 
-        # Combine "Javi Diaz" into one name
-        for i, row in df.iterrows():
-            if row["Name"].strip().lower() == "javi" and i + 1 < len(df):
-                next_name = df.loc[i + 1, "Name"].strip()
-                if next_name.lower() == "diaz":
-                    df.at[i, "Name"] = "Javi Diaz"
-                    df.drop(index=i + 1, inplace=True)  # Drop the next row
-                    df.reset_index(drop=True, inplace=True)
-
         # Convert to JSON structure
         shifts = []
         for _, row in df.iterrows():
