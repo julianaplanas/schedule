@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shift Calendar</title>
+    <title>Calendario del Narru</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -88,9 +88,9 @@
 </head>
 <body>
     <div class="container">
-        <h1 id="monthTitle">Month: Loading...</h1>
+        <h1 id="monthTitle">Mes: Cargando...</h1>
         <select id="nameDropdown">
-            <option value="">Select a name...</option>
+            <option value="">Seleccioná un nombre</option>
         </select>
         <div class="calendar" id="calendar">
             <!-- Calendar days will be dynamically populated -->
@@ -101,6 +101,24 @@
             <div class="legend-item"><div class="legend-color morning"></div>Turno mañana</div>
             <div class="legend-item"><div class="legend-color night"></div>Turno noche</div>
             <div class="legend-item"><div class="legend-color cut"></div>Horario partido</div>
+
+            <div class="legend-item">RM: 8:30-16:30</div>
+            <div class="legend-item">M1: 7:15-15:00</div>
+            <div class="legend-item">M2: 7:30-15:15</div>
+            <div class="legend-item">M3: 8:30-16:15</div>
+            <div class="legend-item">M5: 10:00-17:45</div>
+
+            <div class="legend-item">S: 13:15-16:00/19:30-00:00</div>
+            <div class="legend-item">P2: 12:15-16:15/19:30-23:15</div>
+            <div class="legend-item">P3: 13:30-16:45/19:30-00:00</div>
+            <div class="legend-item">P4: 14:00-17:00/19:45-00:30</div>
+            <div class="legend-item">P5: 14:00-17:00/19:45-00:30</div>
+
+            <div class="legend-item">RT: 16:30-00:30</div>
+            <div class="legend-item">T1: 15:00-22:45</div>
+            <div class="legend-item">T2: 16:15-00:00</div>
+            <div class="legend-item">T3: 17:00-00:30</div>
+            <div class="legend-item">T5: 15:30-23:15</div>
         </div>
     </div>
 
@@ -114,7 +132,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             try {
                 console.log("Fetching shifts...");
-                const response = await fetch("https://schedule-jx24.onrender.com/shifts"); // Your back-end URL
+                const response = await fetch("https://your-backend-url.com/shifts"); // Replace with your backend URL
                 if (!response.ok) {
                     throw new Error(`Failed to fetch shifts: ${response.status}`);
                 }
@@ -122,18 +140,18 @@
                 const data = await response.json();
                 console.log("Received data:", data);
 
-                // Update the month title
-                if (data.month) {
-                    monthTitle.textContent = `Month: ${data.month}`;
-                } else {
-                    throw new Error("Month data is missing.");
-                }
+                const { month, days, shifts } = data;
 
-                // Validate and populate shifts
-                if (!Array.isArray(data.shifts) || data.shifts.length === 0) {
+                // Validate and update shifts
+                if (!Array.isArray(shifts) || shifts.length === 0) {
                     throw new Error("No valid shift data received.");
                 }
-                shifts = data.shifts;
+                if (!Array.isArray(days) || days.length === 0) {
+                    throw new Error("No valid day numbers received.");
+                }
+
+                document.querySelector("#monthTitle").textContent = month; // Update the month title
+                shiftsData = { shifts, days }; // Store shifts and days for later use
                 populateDropdown();
             } catch (error) {
                 console.error("Error loading preloaded shifts:", error);
@@ -143,7 +161,7 @@
 
         function populateDropdown() {
             dropdown.innerHTML = '<option value="">Select a name...</option>';
-            shifts.forEach(shift => {
+            shiftsData.shifts.forEach(shift => {
                 const option = document.createElement("option");
                 option.value = shift.name;
                 option.textContent = shift.name;
@@ -151,11 +169,10 @@
             });
         }
 
-        function populateCalendar(days) {
-            console.log("Populating calendar with shifts:", days); // Debugging
+        function populateCalendar(selectedDays, dayNumbers) {
             calendar.innerHTML = ""; // Clear existing calendar
 
-            // Add headers for days of the week
+            // Add headers
             const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
             daysOfWeek.forEach(day => {
                 const headerDiv = document.createElement("div");
@@ -164,14 +181,27 @@
                 calendar.appendChild(headerDiv);
             });
 
-            // Populate calendar with shifts
-            days.forEach(shift => {
+            // Populate calendar with shifts and day numbers
+            for (let i = 0; i < dayNumbers.length; i++) {
                 const dayDiv = document.createElement("div");
-                dayDiv.className = `day ${getShiftClass(shift)}`;
-                dayDiv.textContent = shift || ""; // Show shift code or leave blank for 'off'
+                dayDiv.className = `day ${getShiftClass(selectedDays[i])}`;
+                dayDiv.textContent = `${dayNumbers[i]} (${selectedDays[i]})`; // Display day number and shift type
                 calendar.appendChild(dayDiv);
-            });
+            }
         }
+
+        dropdown.addEventListener("change", (e) => {
+            const selectedName = e.target.value;
+
+            const selectedShift = shiftsData.shifts.find(shift => shift.name === selectedName);
+
+            if (selectedShift) {
+                populateCalendar(selectedShift.days, shiftsData.days); // Use both shifts and day numbers
+            } else {
+                calendar.innerHTML = "<p>No shifts found for this name.</p>";
+            }
+        });
+
 
         // Function to assign shift colors
         function getShiftClass(shift) {
