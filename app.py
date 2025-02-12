@@ -7,7 +7,7 @@ CORS(app)  # Enable CORS for cross-origin requests
 
 # Global variable to store shifts
 shifts = []
-days = []  # New variable to store the days (row "DIA")
+day_numbers = []
 
 def process_excel(filepath):
     """Process an Excel file, clean it, and extract shift data."""
@@ -17,15 +17,21 @@ def process_excel(filepath):
         df.fillna("", inplace=True)
 
         # Extract the month
-        month = df.iloc[0, 1].strip()  # Assuming "MES" is in the first row, and the month is in the second column
-        print(f"Extracted Month: {month}")
+        month = df.iloc[0, 1].strip()
 
-        # Extract day numbers
-        dayNumbers_row = df[df.iloc[:, 0].str.contains("DÍA", na=False)].index[0] + 1
-        dayNumbers = df.iloc[dayNumbers_row, 1:].tolist()
-        print(f"Extracted Day Numbers: {dayNumbers}")
+        # Extract day numbers from the "DIA" row
+        day_row = None
+        for i, row in df.iterrows():
+            if row.str.contains("DÍA", na=False).any():
+                day_row = i + 1
+                break
 
-        # Find the start row of the actual schedule
+        if day_row is None:
+            raise ValueError("Day numbers row not found in the Excel file.")
+
+        day_numbers = df.iloc[day_row, 1:].tolist()
+
+        # Find the start row of the actual schedule (skip metadata like PLANTILLA)
         start_row = None
         for i, row in df.iterrows():
             if row.str.contains("PLANTILLA", na=False).any():
@@ -38,8 +44,8 @@ def process_excel(filepath):
         # Process schedule data
         df = df.iloc[start_row:].reset_index(drop=True)
         df.columns = ["Name"] + [f"Day {i}" for i in range(1, df.shape[1])]
-        
-        # Extract shifts
+
+        # Convert to JSON structure
         shifts = []
         for _, row in df.iterrows():
             name = row["Name"].strip()
@@ -48,33 +54,21 @@ def process_excel(filepath):
             if name:  # Skip empty names
                 shifts.append({"name": name, "days": days})
 
-        print(f"Extracted Shifts: {shifts[:5]}")  # Log first 5 shifts
-        return {"month": month, "dayNumbers": dayNumbers, "shifts": shifts}
-
+        return month, day_numbers, shifts
     except Exception as e:
         print(f"Error processing Excel: {e}")
-        return {"month": "", "dayNumbers": [], "shifts": []}
+        return "", [], []
 
 # Preload the Excel file during initialization
 file_path = "uploads/schedule-febrero.xlsx"  # Path to the preloaded Excel file
-data = process_excel(file_path)
-month = data.get("month", "")
-dayNumbers = data.get("dayNumbers", [])
-shifts = data.get("shifts", [])
-
-# Add debugging to check preloaded data
-print(f"Month: {month}, Day Numbers: {dayNumbers}, Shifts: {shifts[:5]}")
-
-# Ensure shifts and dayNumbers are not empty
-if not shifts or not dayNumbers:
-    print("Error: No valid shift data received during preloading.")
-else:
-    print("Preloaded shifts successfully.")
+month, day_numbers, shifts = process_excel(file_path)
+print(f"Shifts preloaded: {shifts[:5]}")  # Log first 5 entries for debugging
+print(f"Day Numbers preloaded: {day_numbers}")
 
 @app.route("/shifts", methods=["GET"])
 def get_shifts():
     """Return the preloaded shift data."""
-    return jsonify({"month": month, "dayNumbers": dayNumbers, "shifts": shifts})
+    return jsonify({"month": month, "dayNumbers": day_numbers, "shifts": shifts})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -22,7 +22,7 @@
         }
         .calendar {
             display: grid;
-            grid-template-columns: 1fr repeat(6, 1fr);
+            grid-template-columns: repeat(7, 1fr);
             gap: 10px;
         }
         .month-label {
@@ -56,10 +56,11 @@
         }
         .legend {
             margin-top: 20px;
-            padding: 10px;
+            padding: 15px;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 10px;
             background-color: #f9f9f9;
+            font-size: 14px;
         }
         .legend-item {
             margin: 5px 0;
@@ -92,33 +93,13 @@
         <select id="nameDropdown">
             <option value="">Seleccioná un nombre</option>
         </select>
-        <div class="calendar" id="calendar">
-            <!-- Calendar days will be dynamically populated -->
-        </div>
+        <div class="calendar" id="calendar"></div>
         <div class="legend">
             <h3>Legend</h3>
             <div class="legend-item"><div class="legend-color off"></div>Día libre</div>
             <div class="legend-item"><div class="legend-color morning"></div>Turno mañana</div>
             <div class="legend-item"><div class="legend-color night"></div>Turno noche</div>
             <div class="legend-item"><div class="legend-color cut"></div>Horario partido</div>
-
-            <div class="legend-item">RM: 8:30-16:30</div>
-            <div class="legend-item">M1: 7:15-15:00</div>
-            <div class="legend-item">M2: 7:30-15:15</div>
-            <div class="legend-item">M3: 8:30-16:15</div>
-            <div class="legend-item">M5: 10:00-17:45</div>
-
-            <div class="legend-item">S: 13:15-16:00/19:30-00:00</div>
-            <div class="legend-item">P2: 12:15-16:15/19:30-23:15</div>
-            <div class="legend-item">P3: 13:30-16:45/19:30-00:00</div>
-            <div class="legend-item">P4: 14:00-17:00/19:45-00:30</div>
-            <div class="legend-item">P5: 14:00-17:00/19:45-00:30</div>
-
-            <div class="legend-item">RT: 16:30-00:30</div>
-            <div class="legend-item">T1: 15:00-22:45</div>
-            <div class="legend-item">T2: 16:15-00:00</div>
-            <div class="legend-item">T3: 17:00-00:30</div>
-            <div class="legend-item">T5: 15:30-23:15</div>
         </div>
     </div>
 
@@ -150,8 +131,8 @@
                     throw new Error("No valid day numbers received.");
                 }
 
-                document.querySelector("#monthTitle").textContent = month; // Update the month title
-                shiftsData = { shifts, dayNumbers }; // Store shifts and days for later use
+                monthTitle.textContent = `Mes: ${month}`; // Update the month title
+                shiftsData = { shifts, days: dayNumbers }; // Store shifts and days for later use
                 populateDropdown();
             } catch (error) {
                 console.error("Error loading preloaded shifts:", error);
@@ -172,8 +153,7 @@
         function populateCalendar(selectedDays, dayNumbers) {
             calendar.innerHTML = ""; // Clear existing calendar
 
-            // Add headers
-            const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
             daysOfWeek.forEach(day => {
                 const headerDiv = document.createElement("div");
                 headerDiv.className = "day header";
@@ -181,29 +161,25 @@
                 calendar.appendChild(headerDiv);
             });
 
-            // Populate calendar with shifts and day numbers
             for (let i = 0; i < dayNumbers.length; i++) {
                 const dayDiv = document.createElement("div");
                 dayDiv.className = `day ${getShiftClass(selectedDays[i])}`;
-                dayDiv.textContent = `${dayNumbers[i]} (${selectedDays[i]})`; // Display day number and shift type
+                dayDiv.textContent = `${dayNumbers[i]} (${selectedDays[i] || ""})`;
                 calendar.appendChild(dayDiv);
             }
         }
 
         dropdown.addEventListener("change", (e) => {
             const selectedName = e.target.value;
-
             const selectedShift = shiftsData.shifts.find(shift => shift.name === selectedName);
 
             if (selectedShift) {
-                populateCalendar(selectedShift.days, shiftsData.days); // Use both shifts and day numbers
+                populateCalendar(selectedShift.days, shiftsData.days);
             } else {
                 calendar.innerHTML = "<p>No shifts found for this name.</p>";
             }
         });
 
-
-        // Function to assign shift colors
         function getShiftClass(shift) {
             if (["RM", "M1", "M2", "M3", "M5"].includes(shift)) return "morning";
             if (["S", "P2", "P3", "P4", "P5"].includes(shift)) return "cut";
