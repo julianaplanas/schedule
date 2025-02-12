@@ -73,7 +73,10 @@ def process_excel(filepath):
 
 # Preload the Excel file during initialization
 file_path = "uploads/schedule-febrero.xlsx"  # Path to the preloaded Excel file
-shifts, days = process_excel(file_path)
+data = process_excel(file_path)
+month = data.get("month", "")
+dayNumbers = data.get("dayNumbers", [])
+shifts = data.get("shifts", [])
 print(f"Shifts preloaded: {shifts[:5]}")  # Log first 5 entries for debugging
 print(f"Days row: {days}")  # Log the days row for debugging
 
