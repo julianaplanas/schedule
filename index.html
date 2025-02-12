@@ -22,8 +22,15 @@
         }
         .calendar {
             display: grid;
-            grid-template-columns: repeat(7, 1fr); /* 7 days in a week */
+            grid-template-columns: 1fr repeat(7, 1fr);
             gap: 10px;
+        }
+        .month-label {
+            grid-column: 1 / -1;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
         }
         .day {
             border: 1px solid #ccc;
@@ -32,16 +39,16 @@
             border-radius: 5px;
         }
         .day.off {
-            background-color: #ffffff; /* White for Day Off */
+            background-color: #ffffff;
         }
         .day.morning {
-            background-color: lightgreen; /* Green for Morning Shift */
+            background-color: lightgreen;
         }
         .day.night {
-            background-color: #FFFACD; /* Yellow for Night Shift */
+            background-color: #FFFACD;
         }
         .day.cut {
-            background-color: #ADD8E6; /* Blue for Cut/Partido Shift */
+            background-color: #ADD8E6;
         }
         .header {
             font-weight: bold;
@@ -81,7 +88,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Shift Calendar</h1>
+        <h1 id="monthTitle">Month: Loading...</h1>
         <select id="nameDropdown">
             <option value="">Select a name...</option>
         </select>
@@ -90,20 +97,20 @@
         </div>
         <div class="legend">
             <h3>Legend</h3>
-            <div class="legend-item"><div class="legend-color off"></div>Day Off</div>
-            <div class="legend-item"><div class="legend-color morning"></div>Morning Shift</div>
-            <div class="legend-item"><div class="legend-color night"></div>Night Shift</div>
-            <div class="legend-item"><div class="legend-color cut"></div>Partido Shift</div>
+            <div class="legend-item"><div class="legend-color off"></div>Día libre</div>
+            <div class="legend-item"><div class="legend-color morning"></div>Turno mañana</div>
+            <div class="legend-item"><div class="legend-color night"></div>Turno noche</div>
+            <div class="legend-item"><div class="legend-color cut"></div>Horario partido</div>
         </div>
     </div>
 
     <script>
         const calendar = document.querySelector("#calendar");
         const dropdown = document.querySelector("#nameDropdown");
+        const monthTitle = document.querySelector("#monthTitle");
 
-        let shifts = []; // To hold fetched shift data
+        let shifts = [];
 
-        // Fetch shifts from the backend on page load
         document.addEventListener("DOMContentLoaded", async () => {
             try {
                 console.log("Fetching shifts...");
@@ -116,8 +123,11 @@
                 console.log("Received data:", data);
 
                 // Update the month title
-                const monthTitle = document.querySelector("#monthTitle");
-                monthTitle.textContent = `Month: ${data.month}`;
+                if (data.month) {
+                    monthTitle.textContent = `Month: ${data.month}`;
+                } else {
+                    throw new Error("Month data is missing.");
+                }
 
                 // Validate and populate shifts
                 if (!Array.isArray(data.shifts) || data.shifts.length === 0) {
@@ -131,14 +141,9 @@
             }
         });
 
-
-        // Populate the dropdown with names
         function populateDropdown() {
-            console.log("Populating dropdown..."); // Debugging
             dropdown.innerHTML = '<option value="">Select a name...</option>';
             shifts.forEach(shift => {
-                console.log("Adding name to dropdown:", shift.name); // Debugging
-
                 const option = document.createElement("option");
                 option.value = shift.name;
                 option.textContent = shift.name;
@@ -146,7 +151,6 @@
             });
         }
 
-        // Populate the calendar based on selected name
         function populateCalendar(days) {
             console.log("Populating calendar with shifts:", days); // Debugging
             calendar.innerHTML = ""; // Clear existing calendar
@@ -161,34 +165,28 @@
             });
 
             // Populate calendar with shifts
-            for (let i = 0; i < 35; i++) { // Assuming a 5-week month layout
+            days.forEach(shift => {
                 const dayDiv = document.createElement("div");
-                if (i < days.length) {
-                    dayDiv.className = `day ${getShiftClass(days[i])}`;
-                    dayDiv.textContent = days[i] || "";  // Show shift code or blank
-                } else {
-                    dayDiv.className = "day off";
-                    dayDiv.textContent = "";
-                }
+                dayDiv.className = `day ${getShiftClass(shift)}`;
+                dayDiv.textContent = shift || ""; // Show shift code or leave blank for 'off'
                 calendar.appendChild(dayDiv);
-            }
+            });
         }
 
-        // Map shift codes to classes for color coding
+        // Function to assign shift colors
         function getShiftClass(shift) {
             if (["RM", "M1", "M2", "M3", "M5"].includes(shift)) return "morning";
             if (["S", "P2", "P3", "P4", "P5"].includes(shift)) return "cut";
             if (["RT", "T1", "T2", "T3", "T5"].includes(shift)) return "night";
-            return "off"; // Default to "off"
+            return "off";
         }
 
-        // Handle dropdown change
         dropdown.addEventListener("change", (e) => {
             const selectedName = e.target.value;
-            console.log("Selected name:", selectedName); // Debugging
+            console.log("Selected name:", selectedName);  // Debugging
 
             const filteredData = shifts.find(shift => shift.name === selectedName);
-            console.log("Filtered shift data:", filteredData); // Debugging
+            console.log("Filtered shift data:", filteredData);  // Debugging
 
             if (filteredData) {
                 populateCalendar(filteredData.days);
