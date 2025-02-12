@@ -5,7 +5,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # Enable CORS for cross-origin requests
 
-# Global variable to store shifts
+# Global variables
 shifts = []
 day_numbers = []
 
@@ -19,7 +19,7 @@ def process_excel(filepath):
         # Extract the month
         month = df.iloc[0, 1].strip()
 
-        # Extract day numbers from the "DIA" row
+        # Extract day numbers from the "DÍA" row
         day_row = None
         for i, row in df.iterrows():
             if row.str.contains("DÍA", na=False).any():
@@ -29,6 +29,7 @@ def process_excel(filepath):
         if day_row is None:
             raise ValueError("Day numbers row not found in the Excel file.")
 
+        # Get the actual day numbers
         day_numbers = df.iloc[day_row, 1:].tolist()
 
         # Find the start row of the actual schedule (skip metadata like PLANTILLA)
