@@ -1,85 +1,210 @@
-<script>
-    const calendar = document.querySelector("#calendar");
-    const dropdown = document.querySelector("#nameDropdown");
-    const monthTitle = document.querySelector("#monthTitle");
-
-    let shiftsData = {};
-
-    document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            console.log("Fetching shifts...");
-            const response = await fetch("https://schedule-jx24.onrender.com/shifts"); // Replace with your backend URL
-            if (!response.ok) {
-                throw new Error(`Failed to fetch shifts: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log("Received data:", data);
-
-            const { month, dayNumbers, shifts } = data;
-
-            // Validate and update shifts
-            if (!Array.isArray(shifts) || shifts.length === 0) {
-                throw new Error("No valid shift data received.");
-            }
-            if (!Array.isArray(dayNumbers) || dayNumbers.length === 0) {
-                throw new Error("No valid day numbers received.");
-            }
-
-            monthTitle.textContent = `Mes: ${month}`; // Update the month title
-            shiftsData = { shifts, days: dayNumbers }; // Store shifts and days for later use
-            populateDropdown();
-        } catch (error) {
-            console.error("Error loading preloaded shifts:", error);
-            alert("Failed to load schedule data. Please try again later.");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario del Narru</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
         }
-    });
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .month-label {
+            grid-column: 1 / -1;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .day {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+            font-size: 0.9rem;
+        }
+        .day.off {
+            background-color: #ffffff;
+        }
+        .day.morning {
+            background-color: #b8e994;
+        }
+        .day.night {
+            background-color: #fce38a;
+        }
+        .day.cut {
+            background-color: #87ceeb;
+        }
+        .header {
+            font-weight: bold;
+            background-color: #333;
+            color: white;
+            border: none;
+        }
+        .legend {
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+        .legend h3 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .legend-item {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+        .legend-color.off {
+            background-color: #ffffff;
+        }
+        .legend-color.morning {
+            background-color: #b8e994;
+        }
+        .legend-color.night {
+            background-color: #fce38a;
+        }
+        .legend-color.cut {
+            background-color: #87ceeb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="monthTitle">Mes: Cargando...</h1>
+        <select id="nameDropdown">
+            <option value="">Seleccioná un nombre...</option>
+        </select>
+        <div class="calendar" id="calendar">
+            <!-- Calendar days will be dynamically populated -->
+        </div>
+        <div class="legend">
+            <h3>Leyenda</h3>
+            <div class="legend-item"><div class="legend-color off"></div>Día libre</div>
+            <div class="legend-item"><div class="legend-color morning"></div>Turno mañana</div>
+            <div class="legend-item"><div class="legend-color night"></div>Turno noche</div>
+            <div class="legend-item"><div class="legend-color cut"></div>Horario partido</div>
+        </div>
+    </div>
 
-    function populateDropdown() {
-        dropdown.innerHTML = '<option value="">Seleccioná un nombre</option>';
-        shiftsData.shifts.forEach(shift => {
-            const option = document.createElement("option");
-            option.value = shift.name;
-            option.textContent = shift.name;
-            dropdown.appendChild(option);
+    <script>
+        const calendar = document.querySelector("#calendar");
+        const dropdown = document.querySelector("#nameDropdown");
+        const monthTitle = document.querySelector("#monthTitle");
+
+        let shiftsData = {};
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                console.log("Fetching shifts...");
+                const response = await fetch("https://schedule-jx24.onrender.com/shifts"); // Replace with your backend URL
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch shifts: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Received data:", data);
+
+                if (!data || !data.month || !data.dayNumbers || !data.shifts) {
+                    throw new Error("Invalid schedule data received.");
+                }
+
+                monthTitle.textContent = `Mes: ${data.month}`; // Update the month title
+                shiftsData = data; // Store the fetched data globally
+                populateDropdown();
+            } catch (error) {
+                console.error("Error loading preloaded shifts:", error);
+                alert("Failed to load schedule data. Please try again later.");
+            }
         });
-    }
 
-    function populateCalendar(selectedDays, dayNumbers) {
-        calendar.innerHTML = ""; // Clear existing calendar
+        function populateDropdown() {
+            dropdown.innerHTML = '<option value="">Seleccioná un nombre...</option>';
+            shiftsData.shifts.forEach(shift => {
+                const option = document.createElement("option");
+                option.value = shift.name;
+                option.textContent = shift.name;
+                dropdown.appendChild(option);
+            });
+        }
 
-        const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
-        daysOfWeek.forEach(day => {
-            const headerDiv = document.createElement("div");
-            headerDiv.className = "day header";
-            headerDiv.textContent = day;
-            calendar.appendChild(headerDiv);
+        function populateCalendar(selectedDays, dayNumbers) {
+            calendar.innerHTML = ""; // Clear existing calendar
+
+            // Add headers
+            const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
+            daysOfWeek.forEach(day => {
+                const headerDiv = document.createElement("div");
+                headerDiv.className = "day header";
+                headerDiv.textContent = day;
+                calendar.appendChild(headerDiv);
+            });
+
+            // Populate calendar with shifts and day numbers
+            for (let i = 0; i < dayNumbers.length; i++) {
+                const dayDiv = document.createElement("div");
+                dayDiv.className = `day ${getShiftClass(selectedDays[i])}`;
+                dayDiv.textContent = `${dayNumbers[i]} (${selectedDays[i]})`; // Display day number and shift type
+                calendar.appendChild(dayDiv);
+            }
+        }
+
+        dropdown.addEventListener("change", (e) => {
+            const selectedName = e.target.value;
+
+            const selectedShift = shiftsData.shifts.find(shift => shift.name === selectedName);
+
+            if (selectedShift) {
+                populateCalendar(selectedShift.days, shiftsData.dayNumbers); // Use both shifts and day numbers
+            } else {
+                calendar.innerHTML = "<p>No shifts found for this name.</p>";
+            }
         });
 
-        for (let i = 0; i < dayNumbers.length; i++) {
-            const dayDiv = document.createElement("div");
-            dayDiv.className = `day ${getShiftClass(selectedDays[i])}`;
-            const shiftText = selectedDays[i] ? `(${selectedDays[i]})` : "";
-            dayDiv.textContent = `${dayNumbers[i]} ${shiftText}`; // Display day number and shift type
-            calendar.appendChild(dayDiv);
+        function getShiftClass(shift) {
+            if (["RM", "M1", "M2", "M3", "M5"].includes(shift)) return "morning";
+            if (["S", "P2", "P3", "P4", "P5"].includes(shift)) return "cut";
+            if (["RT", "T1", "T2", "T3", "T5"].includes(shift)) return "night";
+            return "off";
         }
-    }
-
-    dropdown.addEventListener("change", (e) => {
-        const selectedName = e.target.value;
-        const selectedShift = shiftsData.shifts.find(shift => shift.name === selectedName);
-
-        if (selectedShift) {
-            populateCalendar(selectedShift.days, shiftsData.days);
-        } else {
-            calendar.innerHTML = "<p>No shifts found for this name.</p>";
-        }
-    });
-
-    function getShiftClass(shift) {
-        if (["RM", "M1", "M2", "M3", "M5"].includes(shift)) return "morning";
-        if (["S", "P2", "P3", "P4", "P5"].includes(shift)) return "cut";
-        if (["RT", "T1", "T2", "T3", "T5"].includes(shift)) return "night";
-        return "off";
-    }
-</script>
+    </script>
+</body>
+</html>

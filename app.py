@@ -10,29 +10,20 @@ shifts = []
 day_numbers = []
 
 def process_excel(filepath):
-    """Process an Excel file, clean it, and extract shift data."""
     try:
         # Load the Excel file
         df = pd.read_excel(filepath, dtype=str, header=None)
         df.fillna("", inplace=True)
 
-        # Extract the month
-        month = df.iloc[0, 1].strip()
+        # Extract month
+        month_row = df.iloc[0]  # Adjust based on actual file structure
+        month = month_row[df.columns[1]]  # Assuming "FEBRERO" is in the second column
 
-        # Extract day numbers from the "DÍA" row
-        day_row = None
-        for i, row in df.iterrows():
-            if row.str.contains("DÍA", na=False).any():
-                day_row = i + 1
-                break
+        # Extract day numbers
+        day_numbers_row = df.iloc[1]  # Adjust based on actual file structure
+        day_numbers = day_numbers_row[1:].tolist()  # Skip the first column if it's not part of day numbers
 
-        if day_row is None:
-            raise ValueError("Day numbers row not found in the Excel file.")
-
-        # Get the actual day numbers
-        day_numbers = df.iloc[day_row, 1:].tolist()
-
-        # Find the start row of the actual schedule (skip metadata like PLANTILLA)
+        # Extract shifts
         start_row = None
         for i, row in df.iterrows():
             if row.str.contains("PLANTILLA", na=False).any():
@@ -42,23 +33,22 @@ def process_excel(filepath):
         if start_row is None:
             raise ValueError("Start row for schedule not found in the Excel file.")
 
-        # Process schedule data
-        df = df.iloc[start_row:].reset_index(drop=True)
-        df.columns = ["Name"] + [f"Day {i}" for i in range(1, df.shape[1])]
+        schedule_data = df.iloc[start_row:].reset_index(drop=True)
+        schedule_data.columns = ["Name"] + [f"Day {i}" for i in range(1, schedule_data.shape[1])]
 
-        # Convert to JSON structure
         shifts = []
-        for _, row in df.iterrows():
+        for _, row in schedule_data.iterrows():
             name = row["Name"].strip()
             days = row.iloc[1:].tolist()
 
-            if name:  # Skip empty names
+            if name:
                 shifts.append({"name": name, "days": days})
 
-        return month, day_numbers, shifts
+        return {"month": month, "dayNumbers": day_numbers, "shifts": shifts}
+
     except Exception as e:
         print(f"Error processing Excel: {e}")
-        return "", [], []
+        return {"month": "", "dayNumbers": [], "shifts": []}
 
 # Preload the Excel file during initialization
 file_path = "uploads/schedule-febrero.xlsx"  # Path to the preloaded Excel file
